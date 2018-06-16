@@ -25,16 +25,15 @@ class flow_graph {
     };
     class mirror_edge;
     class edge: public Iedge {
-        int pid, lfrom, pto, cap, pflow, forward_price;
+        int pid, pfrom, pto, pcap, pflow, pprice;
     public:
-        edge(int pid, int v_from, int v_to, int cap, int forward_price):
-            pid(pid), lfrom(v_from), pto(v_to), cap(cap), pflow(0), forward_price(forward_price) {
-        }
+        edge(int id, int from, int to, int cap, int price):
+            pid(id), pfrom(from), pto(to), pcap(cap), pflow(0), pprice(price) {}
         int id() {
             return pid;
         }
         int from() {
-            return lfrom;
+            return pfrom;
         }
         int to() {
             return pto;
@@ -43,10 +42,10 @@ class flow_graph {
             return pflow;
         }
         int price() {
-            return forward_price;
+            return pflow >= 0 ? pprice : -pprice;
         }
         int free_cap() {
-            return cap - pflow;
+            return pflow >= 0 ? pcap - pflow : -pflow;
         }
         void pass_flow(int df) {
             pflow += df;
@@ -64,16 +63,16 @@ class flow_graph {
             return real->pto;
         }
         int to() {
-            return real->lfrom;
+            return real->pfrom;
         }
         int flow() {
             return -real->pflow;
         }
         int price() {
-            return -real->forward_price;
+            return real->pflow <= 0 ? real->pprice : -real->pprice;
         }
         int free_cap() {
-            return real->pflow;
+            return real->pflow <= 0 ? real->pflow + real->pcap : real->pflow;
         }
         void pass_flow(int df) {
             real->pass_flow(-df);
@@ -121,8 +120,8 @@ class flow_graph {
 public:
     vector <vector<shared_ptr<Iedge>>> v;
     vector <int64_t> h;
-    void init_h() {
-        h.resize(v.size());
+    flow_graph(int n) {
+        v.resize(n);
     }
     int64_t potential_weight(Iedge &e) {
         return h[e.from()] + e.price() - h[e.to()];
@@ -135,6 +134,7 @@ public:
         v[t].emplace_back(new mirror_edge(temp));
     }
     int build_flow(int lim) {
+        h.resize(v.size());
         for (int i = 0; i < lim; ++i) {
             h += Dijkstra();
             if (!push_flow())
@@ -172,24 +172,15 @@ public:
     }
 };
 
-
-
-int main() {
-    int n, m, k;
-    cin >> n >> m >> k;
-    flow_graph g;
-    g.v.resize(n);
+void read(flow_graph &g, int m) {
     for (int i = 0; i < m; ++i) {
         int cfrom, cto, cw;
         cin >> cfrom >> cto >> cw;
         g.add_edge(i + 1, cfrom - 1, cto - 1, 1, cw);
-        g.add_edge(i + 1, cto - 1, cfrom - 1, 1, cw);
     }
-    g.init_h();
-    if (g.build_flow(k) < k) {
-        cout << "-1\n";
-        return 0;
-    }
+}
+
+void print(flow_graph &g, int k) {
     cout.precision(8);
     cout << fixed << g.get_cost() * 1.0 / k << endl;
     for (int i = 0; i < k; ++i) {
@@ -199,4 +190,16 @@ int main() {
             cout << g.path[i] << ' ';
         cout << endl;
     }
+}
+
+int main() {
+    int n, m, k;
+    cin >> n >> m >> k;
+    flow_graph g(n);
+    read(g, m);
+    if (g.build_flow(k) < k) {
+        cout << "-1\n";
+        return 0;
+    }
+    print(g, k);
 }
