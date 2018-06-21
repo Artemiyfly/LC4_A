@@ -4,6 +4,9 @@
 #include <queue>
 
 using namespace std;
+
+const int64_t INF = 1e10;
+
 template <typename T>
 vector<T> &operator+=(vector <T> &a, const vector <T> &b) {
     for (size_t i = 0; i < a.size(); ++i)
@@ -12,7 +15,6 @@ vector<T> &operator+=(vector <T> &a, const vector <T> &b) {
 }
 
 class flow_graph {
-    const int64_t INF = 1e10;
     class Iedge {
      public:
         virtual int id() = 0;
